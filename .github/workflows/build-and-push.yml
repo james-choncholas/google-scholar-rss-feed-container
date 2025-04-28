@@ -1,0 +1,48 @@
+name: Build and Push Container
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: read
+  packages: write # Needed to push to GHCR
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive' # Checkout submodules
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }} # Use the built-in GITHUB_TOKEN
+
+      - name: Build container image
+        run: make build
+        # Assuming 'make build' creates a local image named 'google-scholar-rss-feed:latest'
+
+      - name: Define image tags
+        id: image_tags
+        run: |
+          echo "image_local=google-scholar-rss-feed:latest" >> $GITHUB_ENV
+          echo "image_sha=ghcr.io/${{ github.repository }}:${{ github.sha }}" >> $GITHUB_ENV
+          echo "image_latest=ghcr.io/${{ github.repository }}:latest" >> $GITHUB_ENV
+
+      - name: Tag image
+        run: |
+          docker tag ${{ env.image_local }} ${{ env.image_sha }}
+          docker tag ${{ env.image_local }} ${{ env.image_latest }}
+
+      - name: Push image to GHCR
+        run: |
+          docker push ${{ env.image_sha }}
+          docker push ${{ env.image_latest }}

@@ -1,0 +1,3 @@
+[submodule "google-scholar-rss-feed"]
+	path = google-scholar-rss-feed
+	url = https://github.com/Julien-cpsn/google-scholar-rss-feed
